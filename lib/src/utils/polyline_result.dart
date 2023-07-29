@@ -1,24 +1,21 @@
-import '../../flutter_polyline_points.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// description:
 /// project: flutter_polyline_points
-/// @package: 
+/// @package:
 /// @author: dammyololade
 /// created on: 13/05/2020
 class PolylineResult {
-
   /// the api status retuned from google api
   ///
   /// returns OK if the api call is successful
-  String? status;
+  final bool isSuccess;
 
   /// list of decoded points
-  List<PointLatLng> points;
+  final List<LatLng> points;
 
   /// the error message returned from google, if none, the result will be empty
-  String? errorMessage;
+  final String errorMessage;
 
-  PolylineResult({this.status, this.points = const [], this.errorMessage = ""});
-
-
+  PolylineResult({this.isSuccess = false, this.points = const [], this.errorMessage = ""});
 }
