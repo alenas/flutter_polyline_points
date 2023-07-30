@@ -36,49 +36,50 @@ class NetworkUtil {
     }
     Uri uri = Uri.https("maps.googleapis.com", "maps/api/directions/json", params);
 
-    // print('GOOGLE MAPS URL: ' + url);
     Response response;
     try {
-      response = await http.get(uri, headers: {"Access-Control-Allow-Origin": "*"});
+      response = await http.get(uri);
     } catch (e) {
       return PolylineResult(errorMessage: e.toString());
     }
     var isSuccess = false;
     List<LatLng> points = [];
+    LatLngBounds? bounds;
     var errorMessage = '';
     if (response.statusCode == 200) {
       var parsedJson = json.decode(response.body);
       isSuccess = parsedJson["status"]?.toLowerCase() == STATUS_OK;
       if (isSuccess && parsedJson["routes"] != null && parsedJson["routes"].isNotEmpty) {
-        points = decodeEncodedPolyline(parsedJson["routes"][0]["overview_polyline"]["points"]);
+        points = decodePolyline(parsedJson["routes"][0]["overview_polyline"]["points"]);
+        bounds = boundsFromMap(parsedJson["routes"][0]["bounds"]);
       } else {
         errorMessage = parsedJson["error_message"];
       }
     }
-    return PolylineResult(isSuccess: isSuccess, points: points, errorMessage: errorMessage);
+    return PolylineResult(isSuccess: isSuccess, points: points, bounds: bounds, errorMessage: errorMessage);
   }
 
   ///decode the google encoded string using Encoded Polyline Algorithm Format
   /// for more info about the algorithm check https://developers.google.com/maps/documentation/utilities/polylinealgorithm
   ///
-  ///return [List]
-  static List<LatLng> decodeEncodedPolyline(String encoded) {
+  ///return [List] of [LatLng]
+  static List<LatLng> decodePolyline(String encoded) {
     List<LatLng> poly = [];
     int index = 0, len = encoded.length;
     int lat = 0, lng = 0;
-    BigInt Big0 = BigInt.from(0);
-    BigInt Big0x1f = BigInt.from(0x1f);
-    BigInt Big0x20 = BigInt.from(0x20);
+    final big0 = BigInt.from(0);
+    final big0x1f = BigInt.from(0x1f);
+    final big0x20 = BigInt.from(0x20);
 
     while (index < len) {
       int shift = 0;
       BigInt b, result;
-      result = Big0;
+      result = big0;
       do {
         b = BigInt.from(encoded.codeUnitAt(index++) - 63);
-        result |= (b & Big0x1f) << shift;
+        result |= (b & big0x1f) << shift;
         shift += 5;
-      } while (b >= Big0x20);
+      } while (b >= big0x20);
       BigInt rShifted = result >> 1;
       int dLat;
       if (result.isOdd)
@@ -88,12 +89,12 @@ class NetworkUtil {
       lat += dLat;
 
       shift = 0;
-      result = Big0;
+      result = big0;
       do {
         b = BigInt.from(encoded.codeUnitAt(index++) - 63);
-        result |= (b & Big0x1f) << shift;
+        result |= (b & big0x1f) << shift;
         shift += 5;
-      } while (b >= Big0x20);
+      } while (b >= big0x20);
       rShifted = result >> 1;
       int dLng;
       if (result.isOdd)
@@ -105,5 +106,26 @@ class NetworkUtil {
       poly.add(LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble()));
     }
     return poly;
+  }
+
+  static LatLngBounds? boundsFromMap(Object? json) {
+    if (json == null) {
+      return null;
+    }
+    assert(json is Map && json.length == 2);
+    final list = json as Map<String, dynamic>;
+    final first = LatLng(list["southwest"]["lat"], list["southwest"]["lng"]);
+    final second = LatLng(list["northeast"]["lat"], list["northeast"]["lng"]);
+    if (first.latitude <= second.latitude) {
+      return LatLngBounds(
+        southwest: first,
+        northeast: second,
+      );
+    } else {
+      return LatLngBounds(
+        southwest: second,
+        northeast: first,
+      );
+    }
   }
 }

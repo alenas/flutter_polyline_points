@@ -23,6 +23,6 @@ class Directions {
   /// e.g "_p~iF~ps|U_ulLnnqC_mqNvxq`@"
   ///
   static List<LatLng> decodePolyline(String encodedString) {
-    return NetworkUtil.decodeEncodedPolyline(encodedString);
+    return NetworkUtil.decodePolyline(encodedString);
   }
 }

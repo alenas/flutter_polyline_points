@@ -14,8 +14,10 @@ class PolylineResult {
   /// list of decoded points
   final List<LatLng> points;
 
+  final LatLngBounds? bounds;
+
   /// the error message returned from google, if none, the result will be empty
   final String errorMessage;
 
-  PolylineResult({this.isSuccess = false, this.points = const [], this.errorMessage = ""});
+  PolylineResult({this.isSuccess = false, this.points = const [], this.bounds, this.errorMessage = ""});
 }
