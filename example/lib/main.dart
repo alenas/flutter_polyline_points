@@ -42,7 +42,7 @@ class _MapScreenState extends State<MapScreen> {
   Map<MarkerId, Marker> markers = {};
   Map<PolylineId, Polyline> polylines = {};
   List<LatLng> polylineCoordinates = [];
-  String googleAPiKey = "Please provide your api key";
+  String googleAPiKey = const String.fromEnvironment("API_KEY", defaultValue: "");
 
   @override
   void initState() {
@@ -92,7 +92,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   _getPolyline() async {
-    PolylineResult result = await Directions.getRouteBetweenCoordinates(
+    RouteResult result = await Directions.getRouteBetweenCoordinates(
         googleAPiKey, LatLng(_originLatitude, _originLongitude), LatLng(_destLatitude, _destLongitude),
         travelMode: TravelMode.driving, wayPoints: [PolylineWayPoint(location: "Sabo, Yaba Lagos Nigeria")]);
     if (result.points.isNotEmpty) {
