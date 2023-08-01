@@ -13,7 +13,7 @@ class RouteResult {
   final List<LatLng> points;
 
   /// Bounds of points
-  final LatLngBounds? bounds;
+  //final LatLngBounds? bounds;
 
   /// Route distance in meters
   final int distance;
@@ -27,5 +27,5 @@ class RouteResult {
   /// the error message returned from google
   final String errorMessage;
 
-  RouteResult({this.isSuccess = false, this.points = const [], this.bounds, this.distance = 0, this.duration = 0, this.summary = "", this.errorMessage = ""});
+  RouteResult({this.isSuccess = false, this.points = const [], this.distance = 0, this.duration = 0, this.summary = "", this.errorMessage = ""});
 }

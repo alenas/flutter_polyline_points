@@ -92,14 +92,13 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   _getPolyline() async {
-    RouteResult result = await Directions.getRouteBetweenCoordinates(
-        googleAPiKey, LatLng(_originLatitude, _originLongitude), LatLng(_destLatitude, _destLongitude),
-        travelMode: TravelMode.driving, wayPoints: [PolylineWayPoint(location: "Sabo, Yaba Lagos Nigeria")]);
-    if (result.points.isNotEmpty) {
-      result.points.forEach((LatLng point) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      });
-    }
-    _addPolyLine();
+    //Directions.init("Google API KEY");
+    // RouteResult result = await Directions.getRouteBetweenCoordinates(LatLng(_originLatitude, _originLongitude), LatLng(_destLatitude, _destLongitude));
+    // if (result.points.isNotEmpty) {
+    //   result.points.forEach((LatLng point) {
+    //     polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+    //   });
+    // }
+    // _addPolyLine();
   }
 }

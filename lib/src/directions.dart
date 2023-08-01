@@ -4,71 +4,144 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 
-import '../src/utils/polyline_waypoint.dart';
-import '../src/utils/request_enums.dart';
 import 'utils/route_result.dart';
 
 class Directions {
   static const String STATUS_OK = "ok";
+  static late final String API_KEY;
+
+  /// Sets Google API KEY
+  Directions(String apiKey) {
+    API_KEY = apiKey;
+  }
 
   ///Get the encoded string from google directions api
   ///
-  static Future<RouteResult> getRouteBetweenCoordinates(String googleApiKey, LatLng origin, LatLng destination,
-      {TravelMode travelMode = TravelMode.driving,
-      List<PolylineWayPoint> wayPoints = const [],
-      bool avoidHighways = false,
-      bool avoidTolls = false,
-      bool avoidFerries = true,
-      bool optimizeWaypoints = false}) async {
-    String mode = travelMode.toString().replaceAll('TravelMode.', '');
-    var params = {
-      "origin": "${origin.latitude},${origin.longitude}",
-      "destination": "${destination.latitude},${destination.longitude}",
-      "mode": mode,
-      "avoidHighways": "$avoidHighways",
-      "avoidFerries": "$avoidFerries",
-      "avoidTolls": "$avoidTolls",
-      "key": googleApiKey
+  static Future<RouteResult> getRouteBetweenCoordinates(LatLng origin, LatLng destination) async {
+    // {RouteTravelMode? travelMode = RouteTravelMode.DRIVE,
+    // //List<Waypoint> intermediates = const [],
+    // bool avoidHighways = false,
+    // bool avoidTolls = false,
+    // bool avoidFerries = true,
+    // bool optimizeWaypoints = false}) async {
+    //String mode = travelMode.toString().replaceAll('TravelMode.', '');
+    var filter = {
+      "fields": "routes.staticDuration,routes.distanceMeters,routes.description,routes.polyline.encodedPolyline",
     };
-    if (wayPoints.isNotEmpty) {
-      List wayPointsArray = [];
-      wayPoints.forEach((point) => wayPointsArray.add(point.location));
-      String wayPointsString = wayPointsArray.join('|');
-      if (optimizeWaypoints) {
-        wayPointsString = 'optimize:true|$wayPointsString';
-      }
-      params.addAll({"waypoints": wayPointsString});
+    // var params = {
+    //   "origin": "${origin.latitude},${origin.longitude}",
+    //   "destination": "${destination.latitude},${destination.longitude}",
+    //   "mode": mode,
+    //   "avoidHighways": "$avoidHighways",
+    //   "avoidFerries": "$avoidFerries",
+    //   "avoidTolls": "$avoidTolls",
+    //   "key": API_KEY
+    // };
+    var body = {
+      "origin": {
+        "location": {
+          "latLng": {"latitude": origin.latitude, "longitude": origin.longitude},
+        }
+      },
+      "destination": {
+        "location": {
+          "latLng": {"latitude": destination.latitude, "longitude": destination.longitude},
+        }
+      },
+      "routeModifiers": {"avoidFerries": true},
+    };
+    //print(body);
+    /*
+    {
+  "origin": {
+    object (Waypoint)
+  },
+  "destination": {
+    object (Waypoint)
+  },
+  "intermediates": [
+    {
+      object (Waypoint)
     }
-    Uri uri = Uri.https("maps.googleapis.com", "maps/api/directions/json", params);
+  ],
+  "travelMode": enum (RouteTravelMode),
+  "routingPreference": enum (RoutingPreference),
+  "polylineQuality": enum (PolylineQuality),
+  "polylineEncoding": enum (PolylineEncoding),
+  "departureTime": string,
+  "arrivalTime": string,
+  "computeAlternativeRoutes": boolean,
+  "routeModifiers": {
+    object (RouteModifiers)
+  },
+  "languageCode": string,
+  "regionCode": string,
+  "units": enum (Units),
+  "optimizeWaypointOrder": boolean,
+  "requestedReferenceRoutes": [
+    enum (ReferenceRoute)
+  ],
+  "extraComputations": [
+    enum (ExtraComputation)
+  ],
+  "trafficModel": enum (TrafficModel),
+  "transitPreferences": {
+    object (TransitPreferences)
+  }
+}
+*/
+    // if (wayPoints.isNotEmpty) {
+    //   List wayPointsArray = [];
+    //   wayPoints.forEach((point) => wayPointsArray.add(point.location));
+    //   String wayPointsString = wayPointsArray.join('|');
+    //   if (optimizeWaypoints) {
+    //     wayPointsString = 'optimize:true|$wayPointsString';
+    //   }
+    //   params.addAll({"waypoints": wayPointsString});
+    // }
+    Uri uri = Uri.https("routes.googleapis.com", "directions/v2:computeRoutes", filter);
+    // var request = Request("post", uri);
+    // request.headers.addEntries({'Content-Type': 'application/json'}.entries);
+    // request.headers.addEntries({"X-Goog-Api-Key": API_KEY}.entries);
 
     Response response;
     try {
-      response = await http.get(uri);
+      response = await http.post(uri,
+          headers: {
+            //'Referer': 'https://calm-sea-0e45cbd10.1.azurestaticapps.net',
+            'Content-Type': 'application/json',
+            "X-Goog-Api-Key": API_KEY,
+          },
+          body: body.toString());
     } catch (e) {
       return RouteResult(errorMessage: e.toString());
     }
+    //print(response.body);
     var isSuccess = false;
     List<LatLng> points = [];
-    LatLngBounds? bounds;
+    //LatLngBounds? bounds;
     var errorMessage = '';
     var distance = 0;
-    var duration = 0;
+    String duration = "0";
     var summary = '';
+    var parsedJson = json.decode(response.body);
     if (response.statusCode == 200) {
-      var parsedJson = json.decode(response.body);
-      isSuccess = parsedJson["status"]?.toLowerCase() == STATUS_OK;
-      if (isSuccess && parsedJson["routes"] != null && parsedJson["routes"].isNotEmpty) {
-        points = decodePolyline(parsedJson["routes"][0]["overview_polyline"]["points"]);
-        bounds = boundsFromMap(parsedJson["routes"][0]["bounds"]);
-        distance = parsedJson["routes"][0]["legs"][0]["distance"]["value"];
-        duration = parsedJson["routes"][0]["legs"][0]["duration"]["value"];
-        summary = parsedJson["routes"][0]["summary"];
+      isSuccess = true;
+      //isSuccess = parsedJson["status"]?.toLowerCase() == STATUS_OK;
+      if (parsedJson["routes"] != null && parsedJson["routes"].isNotEmpty) {
+        points = decodePolyline(parsedJson["routes"][0]["polyline"]["encodedPolyline"]);
+        //bounds = boundsFromMap(parsedJson["routes"][0]["bounds"]);
+        distance = parsedJson["routes"][0]["distanceMeters"];
+        duration = parsedJson["routes"][0]["staticDuration"];
+        duration = duration.substring(0, duration.length - 1);
+        summary = parsedJson["routes"][0]["description"];
       } else {
-        errorMessage = parsedJson["error_message"];
+        errorMessage = parsedJson["error"]["message"];
       }
+    } else {
+      errorMessage = parsedJson["error"]["message"];
     }
-    return RouteResult(
-        isSuccess: isSuccess, points: points, bounds: bounds, distance: distance, duration: duration, summary: summary, errorMessage: errorMessage);
+    return RouteResult(isSuccess: isSuccess, points: points, distance: distance, duration: int.parse(duration), summary: summary, errorMessage: errorMessage);
   }
 
   ///decode the google encoded string using Encoded Polyline Algorithm Format
