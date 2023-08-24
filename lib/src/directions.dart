@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -191,6 +192,56 @@ class Directions {
       poly.add(LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble()));
     }
     return poly;
+  }
+
+  /// Encodes the given [latitude, longitude] coordinates list to an encoded string.
+  /// @encode_poly Function
+  /// @param {List<LatLng>} coordinates
+  /// @param {int} precision
+  /// @returns {String}
+  static String encodePolyline(List<LatLng> points, {int precision = 5}) {
+    if (points.isEmpty) {
+      return '';
+    }
+
+    var factor = pow(10, precision).toInt();
+
+    StringBuffer output = StringBuffer();
+    output.write(_encode(points[0].latitude, 0, factor));
+    output.write(_encode(points[0].longitude, 0, factor));
+    LatLng a, b;
+    for (var i = 1; i < points.length; i++) {
+      a = points[i];
+      b = points[i - 1];
+      output.write(_encode(a.latitude, b.latitude, factor));
+      output.write(_encode(a.longitude, b.longitude, factor));
+    }
+
+    return output.toString();
+  }
+
+  /// Returns the character string
+  /// @param {double} current
+  /// @param {double} previous
+  /// @param {int} factor
+  /// @returns {String}
+  static StringBuffer _encode(double current, double previous, int factor) {
+    final _current = (current * factor).round();
+    final _previous = (previous * factor).round();
+
+    var coordinate = _current - _previous;
+    coordinate <<= 1;
+    if (_current - _previous < 0) {
+      coordinate = ~coordinate;
+    }
+
+    var output = StringBuffer();
+    while (coordinate >= 0x20) {
+      output.writeCharCode((0x20 | (coordinate & 0x1f)) + 63);
+      coordinate >>= 5;
+    }
+    output.writeCharCode(coordinate + 63);
+    return output;
   }
 
   static LatLngBounds? boundsFromMap(Object? json) {
