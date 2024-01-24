@@ -12,15 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Polyline example',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
+        useMaterial3: true,
         primarySwatch: Colors.orange,
       ),
       home: MapScreen(),
@@ -35,13 +27,12 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   GoogleMapController? mapController;
-  // double _originLatitude = 6.5212402, _originLongitude = 3.3679965;
-  // double _destLatitude = 6.849660, _destLongitude = 3.648190;
-  double _originLatitude = 26.48424, _originLongitude = 50.04551;
-  double _destLatitude = 26.46423, _destLongitude = 50.06358;
+
+  var origin = LatLng(26.48424, 50.04551);
+  var destination = LatLng(26.46423, 50.06358);
+
   Map<MarkerId, Marker> markers = {};
   Map<PolylineId, Polyline> polylines = {};
-  List<LatLng> polylineCoordinates = [];
   String googleAPiKey = const String.fromEnvironment("API_KEY", defaultValue: "");
 
   @override
@@ -49,10 +40,11 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
 
     /// origin marker
-    _addMarker(LatLng(_originLatitude, _originLongitude), "origin", BitmapDescriptor.defaultMarker);
+    _addMarker(origin, "origin", BitmapDescriptor.defaultMarker);
 
     /// destination marker
-    _addMarker(LatLng(_destLatitude, _destLongitude), "destination", BitmapDescriptor.defaultMarkerWithHue(90));
+    _addMarker(destination, "destination", BitmapDescriptor.defaultMarkerWithHue(90));
+
     _getPolyline();
   }
 
@@ -61,7 +53,7 @@ class _MapScreenState extends State<MapScreen> {
     return SafeArea(
       child: Scaffold(
           body: GoogleMap(
-        initialCameraPosition: CameraPosition(target: LatLng(_originLatitude, _originLongitude), zoom: 15),
+        initialCameraPosition: CameraPosition(target: origin, zoom: 15),
         myLocationEnabled: true,
         tiltGesturesEnabled: true,
         compassEnabled: true,
@@ -81,24 +73,26 @@ class _MapScreenState extends State<MapScreen> {
   _addMarker(LatLng position, String id, BitmapDescriptor descriptor) {
     MarkerId markerId = MarkerId(id);
     Marker marker = Marker(markerId: markerId, icon: descriptor, position: position);
+    //setState(() {
     markers[markerId] = marker;
+    //});
   }
 
-  _addPolyLine() {
-    PolylineId id = PolylineId("poly");
-    Polyline polyline = Polyline(polylineId: id, color: Colors.red, points: polylineCoordinates);
+  _addPolyLine(List<LatLng> polylineCoordinates) {
+    var id = PolylineId("poly");
+    var polyline = Polyline(polylineId: id, color: Colors.red, points: polylineCoordinates);
+    //setState(() {
     polylines[id] = polyline;
-    setState(() {});
+    //});
   }
 
   _getPolyline() async {
-    //Directions.init("Google API KEY");
-    // RouteResult result = await Directions.getRouteBetweenCoordinates(LatLng(_originLatitude, _originLongitude), LatLng(_destLatitude, _destLongitude));
-    // if (result.points.isNotEmpty) {
-    //   result.points.forEach((LatLng point) {
-    //     polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-    //   });
-    // }
-    // _addPolyLine();
+    Directions(googleAPiKey);
+    RouteResult result = await Directions.getRouteBetweenCoordinates(origin, destination);
+    if (result.points.isNotEmpty) {
+      _addPolyLine(result.points);
+    } else {
+      debugPrint("Empty result!");
+    }
   }
 }

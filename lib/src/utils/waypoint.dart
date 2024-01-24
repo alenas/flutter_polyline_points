@@ -1,4 +1,4 @@
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 
 /// Encapsulates a waypoint. Waypoints mark both the beginning and end of a route, and include intermediate stops along the route.
 /// https://developers.google.com/maps/documentation/routes/reference/rest/v2/Waypoint

@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
+import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 import 'package:http/http.dart';
 
 import 'utils/route_result.dart';
@@ -101,15 +100,10 @@ class Directions {
     //   params.addAll({"waypoints": wayPointsString});
     // }
     Uri uri = Uri.https("routes.googleapis.com", "directions/v2:computeRoutes", filter);
-    // var request = Request("post", uri);
-    // request.headers.addEntries({'Content-Type': 'application/json'}.entries);
-    // request.headers.addEntries({"X-Goog-Api-Key": API_KEY}.entries);
-
     Response response;
     try {
-      response = await http.post(uri,
+      response = await post(uri,
           headers: {
-            //'Referer': 'https://calm-sea-0e45cbd10.1.azurestaticapps.net',
             'Content-Type': 'application/json',
             "X-Goog-Api-Key": API_KEY,
           },
@@ -117,7 +111,7 @@ class Directions {
     } catch (e) {
       return RouteResult(errorMessage: e.toString());
     }
-    //print(response.body);
+
     var isSuccess = false;
     List<LatLng> points = [];
     //LatLngBounds? bounds;
@@ -131,7 +125,7 @@ class Directions {
       //isSuccess = parsedJson["status"]?.toLowerCase() == STATUS_OK;
       if (parsedJson["routes"] != null && parsedJson["routes"].isNotEmpty) {
         points = decodePolyline(parsedJson["routes"][0]["polyline"]["encodedPolyline"]);
-        //bounds = boundsFromMap(parsedJson["routes"][0]["bounds"]);
+        //bounds = _boundsFromMap(parsedJson["routes"][0]["bounds"]);
         distance = parsedJson["routes"][0]["distanceMeters"];
         duration = parsedJson["routes"][0]["staticDuration"];
         duration = duration.substring(0, duration.length - 1);
@@ -244,7 +238,7 @@ class Directions {
     return output;
   }
 
-  static LatLngBounds? boundsFromMap(Object? json) {
+  static LatLngBounds? _boundsFromMap(Object? json) {
     if (json == null) {
       return null;
     }
